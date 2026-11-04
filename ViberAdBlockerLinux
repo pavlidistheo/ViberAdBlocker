@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -93,10 +94,6 @@ while IFS= read -r domain; do
     fi
 done < "$DOMAINS" > "$DOWNLOAD"
 
-# Create a timestamped backup.
-BACKUP="$HOSTS.backup.$(date +%Y%m%d-%H%M%S)"
-cp -a "$HOSTS" "$BACKUP"
-
 # Build the replacement hosts file.
 {
     cat "$BASE"
@@ -114,4 +111,3 @@ mv -f "$NEW" "$HOSTS"
 echo
 echo "ViberAdBlocker updated successfully."
 echo "Entries in GitHub list: $(wc -l < "$DOMAINS")"
-echo "Backup created: $BACKUP"

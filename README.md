@@ -80,6 +80,52 @@ Restart Viber.
 
 **Important:** Do not delete or overwrite your existing hosts-file entries. Preserve your localhost and hostname configurations.
 
+### Linux – Automatic installation using the script
+
+Alternatively, Linux users can use the `ViberAdBlockerLinux` script to automatically install and update the blocklist.
+
+**Requirements:**
+- `curl` installed on your system.
+- Administrator privileges (`sudo`).
+
+**First installation:**
+
+1. Download the `ViberAdBlockerLinux` script from this repository.
+2. Open a terminal in the directory where you downloaded the script.
+3. Make the script executable:
+
+```bash
+chmod +x ViberAdBlockerLinux
+```
+
+4. Run the script with administrator privileges:
+
+```bash
+sudo ./ViberAdBlockerLinux
+```
+
+5. Enter your administrator password when prompted.
+
+The script automatically downloads the latest blocklist from this repository and updates your `/etc/hosts` file.
+
+It also:
+- Validates the downloaded entries.
+- Removes duplicate domains.
+- Preserves unrelated entries in your hosts file.
+- Replaces its previously managed entries when updating.
+
+**Updating the blocklist:**
+
+Whenever you want to update the blocklist, open a terminal in the directory containing the script and run:
+
+```bash
+sudo ./ViberAdBlockerLinux
+```
+
+The script downloads the latest version directly from GitHub. You do not need to download the script again for ordinary blocklist updates.
+
+**Important:** The script modifies `/etc/hosts` and requires administrator privileges. It does not create a backup of your hosts file.
+
 ## Android
 
 Android also uses a hosts file, normally located at:
