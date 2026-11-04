@@ -1,155 +1,244 @@
 # ViberAdBlocker
 
-**Block advertisements and advertising-related tracking domains used by Viber.**
+Block Viber advertisements by using a custom hosts file.
 
-ViberAdBlocker is a community-friendly hosts-file blocklist designed to help users reduce advertisements and advertising-related connections associated with Viber.
-
-The project provides a list of domains that can be added to the system's hosts file on Windows and Linux.
-
-The goal is to make ad blocking accessible to everyone, including users with little or no technical experience.
+ViberAdBlocker provides a regularly maintained list of domains associated with Viber advertisements and tracking. By redirecting these domains to `0.0.0.0` through your system's hosts file, you can block many advertisements before they reach your device.
 
 ## Features
 
-- Blocks listed advertising and tracking domains.
-- Supports Windows and Linux hosts files.
-- Uses the standard `0.0.0.0` address mapping.
-- Does not require additional software on Windows or Linux.
-- Easy to install, update and remove.
-- Includes automatic installation and update scripts for Windows and Linux.
-- Free and publicly available.
+- Blocks many Viber advertisements and tracking domains.
+- Uses a centrally maintained blocklist hosted on GitHub.
+- Supports Windows, Linux and Android (with root access).
+- Preserves unrelated entries in your existing hosts file.
+- Automatically updates the managed blocklist without creating duplicate entries.
+- Includes an automated Windows installation and update script.
+- Includes an automated Linux installation and update script.
 
-## How does it work?
+## How It Works
 
-A hosts file is a local system file that maps domain names to IP addresses.
+ViberAdBlocker uses a hosts file to prevent connections to known advertising and tracking domains.
 
-ViberAdBlocker uses entries such as:
+The blocklist contains entries in the following format:
 
 ```text
-0.0.0.0 ads.viber.com
-0.0.0.0 ads.aws.viber.com
-0.0.0.0 ads-d.viber.com
+0.0.0.0 example-advertising-domain.com
+0.0.0.0 example-tracking-domain.com
 ```
 
-When an application attempts to connect to one of the blocked domains, the hosts file redirects that domain to `0.0.0.0`, preventing the normal connection.
+When your device attempts to connect to one of these domains, the hosts file redirects the connection to `0.0.0.0`, preventing the domain from being reached.
 
-No browser extension is required.
+The blocklist is maintained in this repository and can be downloaded directly:
 
-## Installation
+[View ViberAdBlocker Blocklist](https://github.com/pavlidistheo/ViberAdBlocker/blob/main/ViberAdBlocker)
 
-### Windows 10 / Windows 11
+---
 
-**Automatic installation (Recommended)**
+## Windows
 
-<escape>**[⬇ DOWNLOAD ViberAdBlocker for Windows](https://github.com/pavlidistheo/ViberAdBlocker/raw/refs/heads/main/ViberAdBlockerWindows.bat)**</escape>
+There are two ways to install ViberAdBlocker on Windows: automatically using the provided script or manually editing the hosts file.
 
-1. Click the download link above.
-2. Once the download is complete, open your Downloads folder.
-3. Double-click `ViberAdBlockerWindows.bat`.
-4. Windows will display a User Account Control (UAC) prompt requesting Administrator privileges.
-5. Click **Yes**.
-6. The script will automatically download the latest blocklist from GitHub and update your Windows hosts file.
+### Automatic Installation (Recommended)
 
-That's it! No need to open or edit any system files manually.
+<escape>[⬇ DOWNLOAD ViberAdBlocker for Windows](https://github.com/pavlidistheo/ViberAdBlocker/releases/latest/download/ViberAdBlockerWindows.bat)</escape>
 
-The script automatically:
+Download the Windows script and double-click the `.bat` file.
 
-- Requests Administrator privileges when necessary.
-- Downloads the latest blocklist securely from GitHub using HTTPS.
-- Retries the download if a temporary connection error occurs.
-- Checks and validates downloaded entries before modifying the hosts file.
-- Removes duplicate domains and normalizes domain names.
-- Rejects invalid entries and protected domains.
-- Checks the downloaded list against safety limits.
-- Preserves unrelated entries in your existing hosts file.
-- Replaces its previously managed entries when updating.
-- Avoids adding domains that are already present elsewhere in the hosts file.
-- Creates a backup of the existing hosts file before making changes.
-- Replaces the hosts file using an atomic operation.
-- Refreshes the Windows DNS cache automatically.
+The script automatically requests administrator privileges and handles the installation process.
 
-**Updating the blocklist**
+**What the script does:**
 
-Whenever you want to update the blocklist:
+- Downloads the latest ViberAdBlocker blocklist directly from GitHub.
+- Validates the downloaded entries.
+- Removes duplicate domains.
+- Checks for existing entries to avoid duplicates.
+- Preserves unrelated entries in your Windows hosts file.
+- Replaces the previously managed ViberAdBlocker entries with the latest list.
+- Creates a backup of the hosts file before making changes.
+- Flushes the Windows DNS cache after updating the hosts file.
 
-1. Double-click `ViberAdBlockerWindows.bat` again.
-2. Approve the Administrator permission prompt.
+No manual editing of the hosts file or command-line knowledge is required.
 
-The script automatically downloads the latest list from GitHub and replaces the previous ViberAdBlocker entries.
+**Backup**
 
-You do not need to download the script again for ordinary blocklist updates.
+The script maintains one rolling backup of your original hosts file:
 
-**Windows script options**
+```text
+C:\Windows\System32\drivers\etc\hosts.viberbak
+```
 
-The script also supports the following optional commands:
+The backup is overwritten before each actual installation, update or uninstallation.
+
+**Additional commands**
+
+The Windows script also supports the following options:
 
 | Command | Description |
 |---|---|
-| `ViberAdBlockerWindows.bat` | Installs or updates the blocklist. |
-| `ViberAdBlockerWindows.bat --dry-run` | Shows what would change without modifying the hosts file. |
-| `ViberAdBlockerWindows.bat --uninstall` | Removes the ViberAdBlocker-managed entries from the hosts file. |
-| `ViberAdBlockerWindows.bat --help` | Displays the available commands. |
+| `--help` | Displays available commands. |
+| `--dry-run` | Previews changes without modifying the hosts file. |
+| `--uninstall` | Removes the ViberAdBlocker managed entries. |
 
-To use these options, open Command Prompt in the folder containing the script and execute the desired command.
+### Manual Installation
 
-**Backup information**
+1. Open Notepad as Administrator.
+2. Open the Windows hosts file:
 
-Before an actual installation, update or uninstallation, the script creates a backup of your existing hosts file at:
+   ```text
+   C:\Windows\System32\drivers\etc\hosts
+   ```
 
-`C:\Windows\System32\drivers\etc\hosts.viberbak`
+3. Select **All Files** in the file dialog to make the hosts file visible.
+4. Download the [ViberAdBlocker blocklist](https://raw.githubusercontent.com/pavlidistheo/ViberAdBlocker/refs/heads/main/ViberAdBlocker).
+5. Copy its contents into the hosts file.
+6. Save the file.
+7. Open Command Prompt as Administrator and execute:
 
-Only one backup is maintained. Each subsequent operation overwrites the previous backup with the hosts file as it existed immediately before that operation.
+   ```cmd
+   ipconfig /flushdns
+   ```
 
-The `--dry-run` option does not modify the hosts file or create a backup.
+---
 
-**Important:** The script modifies the Windows hosts file and requires Administrator privileges. Do not close the script while it is running.
+## Linux
 
-**Manual installation**
+ViberAdBlocker includes an automated Linux script that downloads and applies the latest blocklist.
 
-If you prefer to install the blocklist manually:
+### Automatic Installation
 
-1. Open the Windows Start menu.
-2. Search for **Notepad**.
-3. Right-click Notepad and select **Run as administrator**.
-4. In Notepad, select **File → Open**.
-5. Navigate to:
+Download the `ViberAdBlockerLinux` script from this repository.
 
-   `C:\Windows\System32\drivers\etc\`
+Open a terminal in the directory containing the downloaded script and execute:
 
-6. Change the file filter from **Text Documents (*.txt)** to **All files**.
-7. Open the file named `hosts`.
-8. Open the `ViberAdBlocker` file from this repository on GitHub.
-9. Copy all its blocking entries.
-10. Paste them at the bottom of your Windows hosts file.
-11. Save the file.
+```bash
+chmod +x ViberAdBlockerLinux
+sudo ./ViberAdBlockerLinux
+```
 
-Restart Viber to apply the changes.
+The script automatically:
 
-Alternatively, restart Windows or open Command Prompt as administrator and execute:
+- Downloads the latest blocklist from GitHub using HTTPS.
+- Validates the downloaded hosts entries.
+- Removes duplicate entries.
+- Preserves unrelated entries in `/etc/hosts`.
+- Replaces the previously managed ViberAdBlocker entries.
+- Avoids adding domains that already exist outside the managed block.
+- Updates `/etc/hosts` using a temporary file and atomic replacement.
+
+The script requires root privileges.
+
+**Note:** The Linux script does not create a backup of `/etc/hosts`.
+
+### Manual Installation
+
+1. Open a terminal.
+2. Download the blocklist:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/pavlidistheo/ViberAdBlocker/refs/heads/main/ViberAdBlocker
+   ```
+
+3. Open `/etc/hosts` with root privileges:
+
+   ```bash
+   sudo nano /etc/hosts
+   ```
+
+4. Add the downloaded blocklist entries.
+5. Save the file.
+
+---
+
+## Android
+
+Android users can also use ViberAdBlocker by adding the blocklist to the system hosts file.
+
+**Requirements:** Root access is required to modify the system hosts file.
+
+The hosts file is located at:
+
+```text
+/system/etc/hosts
+```
+
+1. Download the [ViberAdBlocker blocklist](https://raw.githubusercontent.com/pavlidistheo/ViberAdBlocker/refs/heads/main/ViberAdBlocker).
+2. Use a root-enabled file manager or terminal to edit the hosts file.
+3. Add the blocklist entries.
+4. Save the changes and restart Viber if necessary.
+
+**Non-rooted devices**
+
+If your device is not rooted, you can use a DNS-based ad blocker that supports custom domain blocklists.
+
+---
+
+## Updating ViberAdBlocker
+
+The blocklist is maintained in this GitHub repository and may be updated as new advertising and tracking domains are identified.
+
+- **Windows:** Run `ViberAdBlockerWindows.bat` again to download and apply the latest list.
+- **Linux:** Run `ViberAdBlockerLinux` again with root privileges.
+- **Android:** Download the latest blocklist and update your hosts file manually.
+
+Always use the latest version of the blocklist.
+
+## Uninstallation
+
+### Windows
+
+Run the Windows script with the following option:
 
 ```cmd
-ipconfig /flushdns
+ViberAdBlockerWindows.bat --uninstall
 ```
+
+This removes the ViberAdBlocker managed entries while preserving unrelated hosts file entries. The script creates a backup before making the change.
 
 ### Linux
 
-**Manual installation**
-
-1. Open your terminal.
-2. Execute:
+Open `/etc/hosts` with root privileges:
 
 ```bash
 sudo nano /etc/hosts
 ```
 
-3. Enter your administrator password.
-4. Open the `ViberAdBlocker` file from this repository on GitHub.
-5. Copy all its blocking entries.
-6. Paste them at the bottom of `/etc/hosts`.
-7. Save the file using `Ctrl + O`, then press `Enter`.
-8. Exit nano using `Ctrl + X`.
+Remove the entries between:
 
-Restart Viber.
+```text
+# BEGIN ViberAdBlocker
+```
 
-**Automatic installation using the script**
+and:
 
-Linux
+```text
+# END ViberAdBlocker
+```
+
+Save the file.
+
+---
+
+## Limitations
+
+ViberAdBlocker blocks known advertising and tracking domains through the hosts file.
+
+It cannot guarantee that every advertisement will be blocked. Advertising domains may change, and some advertisements may be served from domains required for normal Viber functionality.
+
+Blocking certain domains may affect some Viber features.
+
+## Disclaimer
+
+This project is provided for educational and ad-blocking purposes.
+
+Use it at your own risk. The author is not responsible for any issues, data loss or application functionality problems resulting from the use of this blocklist or its scripts.
+
+## Contributions
+
+Contributions are welcome.
+
+If you identify new advertising or tracking domains, you can open an issue or submit a pull request.
+
+Please make sure that any suggested domains are genuinely related to advertising or tracking before submitting them.
+
+## License
+
+This project is open source. See the repository for licensing information.
