@@ -60,6 +60,34 @@ Alternatively, restart Windows or open Command Prompt as administrator and execu
 ipconfig /flushdns
 ```
 
+### Windows – Automatic installation using the script
+
+Alternatively, Windows users can use the `ViberAdBlockerWindows.bat` script to automatically install and update the blocklist.
+
+**First installation:**
+
+1. Download `ViberAdBlockerWindows.bat` from this repository.
+2. Double-click the downloaded file.
+3. Windows will display a User Account Control (UAC) prompt requesting Administrator privileges.
+4. Click **Yes** to allow the script to run.
+5. The script will automatically download the latest blocklist from GitHub and update your Windows hosts file.
+
+The script automatically:
+- Downloads the latest blocklist.
+- Validates the downloaded entries.
+- Removes duplicate domains.
+- Preserves unrelated entries in your hosts file.
+- Replaces its previously managed entries when updating.
+- Refreshes the Windows DNS cache.
+
+**Updating the blocklist:**
+
+Whenever you want to update the blocklist, simply double-click `ViberAdBlockerWindows.bat` again and approve the Administrator permission prompt.
+
+You do not need to download the script again for ordinary blocklist updates.
+
+**Important:** The script modifies the Windows hosts file and requires Administrator privileges. It does not create a backup of your hosts file.
+
 ### Linux
 
 1. Open your terminal.
