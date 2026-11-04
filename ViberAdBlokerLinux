@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+URL="https://raw.githubusercontent.com/pavlidistheo/ViberAdBlocker/refs/heads/main/ViberAdBlocker"
+HOSTS="/etc/hosts"
+
+BEGIN="# BEGIN ViberAdBlocker"
+END="# END ViberAdBlocker"
+
+if [[ $EUID -ne 0 ]]; then
+    echo "Please run this script as root."
+    exit 1
+fi
+
+if ! command -v curl >/dev/null 2>&1; then
+    echo "Error: curl is not installed."
+    exit 1
+fi
+
+DOWNLOAD=$(mktemp)
+DOMAINS=$(mktemp)
+BASE=$(mktemp)
+NEW=$(mktemp /etc/hosts.XXXXXX)
+
+cleanup() {
+    rm -f "$DOWNLOAD" "$DOMAINS" "$BASE" "$NEW"
+}
+trap cleanup EXIT
+
+echo "Downloading ViberAdBlocker from GitHub..."
+
+if ! curl --fail --silent --show-error --location \
+    --proto '=https' --tlsv1.2 \
+    "$URL" -o "$DOWNLOAD"; then
+    echo "Download failed. /etc/hosts was not changed."
+    exit 1
+fi
+
+# Extract valid, unique hostnames.
+awk '
+    $1 == "0.0.0.0" && NF >= 2 {
+        domain = $2
+
+        if (domain ~ /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+$/)
+            print domain
+    }
+' "$DOWNLOAD" | awk '!seen[$0]++' > "$DOMAINS"
+
+if [[ ! -s "$DOMAINS" ]]; then
+    echo "Error: no valid entries found. /etc/hosts was not changed."
+    exit 1
+fi
+
+# Remove the previous ViberAdBlocker managed block.
+if ! awk -v begin="$BEGIN" -v end="$END" '
+    $0 == begin {
+        if (inside) invalid = 1
+        inside = 1
+        next
+    }
+
+    $0 == end {
+        if (!inside) invalid = 1
+        inside = 0
+        next
+    }
+
+    !inside { print }
+
+    END {
+        if (inside || invalid) exit 1
+    }
+' "$HOSTS" > "$BASE"; then
+    echo "Error: invalid or incomplete ViberAdBlocker markers."
+    echo "/etc/hosts was not changed."
+    exit 1
+fi
+
+# Add entries that are not already present elsewhere in hosts.
+while IFS= read -r domain; do
+    if ! awk -v d="$domain" '
+        {
+            if ($1 !~ /^#/) {
+                for (i = 2; i <= NF && $i !~ /^#/; i++) {
+                    if ($i == d) found = 1
+                }
+            }
+        }
+        END { exit !found }
+    ' "$BASE"; then
+        printf '0.0.0.0 %s\n' "$domain"
+    fi
+done < "$DOMAINS" > "$DOWNLOAD"
+
+# Create a timestamped backup.
+BACKUP="$HOSTS.backup.$(date +%Y%m%d-%H%M%S)"
+cp -a "$HOSTS" "$BACKUP"
+
+# Build the replacement hosts file.
+{
+    cat "$BASE"
+    printf '\n%s\n' "$BEGIN"
+    cat "$DOWNLOAD"
+    printf '%s\n' "$END"
+} > "$NEW"
+
+chown --reference="$HOSTS" "$NEW"
+chmod --reference="$HOSTS" "$NEW"
+
+# Replace hosts atomically.
+mv -f "$NEW" "$HOSTS"
+
+echo
+echo "ViberAdBlocker updated successfully."
+echo "Entries in GitHub list: $(wc -l < "$DOMAINS")"
+echo "Backup created: $BACKUP"
