@@ -88,7 +88,7 @@ $Begin = '# BEGIN ViberAdBlocker'
 $End   = '# END ViberAdBlocker'
 
 # Download safety limits.
-$MaxBytes  = 5MB
+$MaxBytes   = 5MB
 $MaxDomains = 5000
 
 # Protected domains. Exact domains and all their subdomains are rejected.
@@ -146,7 +146,10 @@ function Get-BoundedDownloadText {
 
             $client = [System.Net.Http.HttpClient]::new($handler)
             $client.Timeout = [System.Threading.Timeout]::InfiniteTimeSpan
-            [void]$client.DefaultRequestHeaders.UserAgent.ParseAdd('ViberAdBlocker-Windows/1.0')
+
+            [void]$client.DefaultRequestHeaders.UserAgent.ParseAdd(
+                'ViberAdBlocker-Windows/1.0'
+            )
 
             $currentUri = [uri]$Url
             $redirects = 0
@@ -158,8 +161,6 @@ function Get-BoundedDownloadText {
                 }
 
                 $cts = [System.Threading.CancellationTokenSource]::new()
-
-                # Maximum time to establish the connection and receive headers.
                 $cts.CancelAfter(10000)
 
                 $request = [System.Net.Http.HttpRequestMessage]::new(
@@ -178,7 +179,7 @@ function Get-BoundedDownloadText {
                     $request.Dispose()
                 }
 
-                # Handle redirects manually so every destination is checked.
+                # Handle redirects manually and verify every destination.
                 $status = [int]$response.StatusCode
 
                 if ($status -ge 300 -and $status -lt 400) {
@@ -220,14 +221,14 @@ function Get-BoundedDownloadText {
                     throw 'The final download destination was not HTTPS.'
                 }
 
-                # Reject oversized responses when Content-Length is available.
+                # Check declared size before reading the response body.
                 $contentLength = $response.Content.Headers.ContentLength
 
                 if ($null -ne $contentLength -and $contentLength -gt $MaxBytes) {
                     throw 'The downloaded list exceeds the 5 MB safety limit.'
                 }
 
-                # Allow up to 60 seconds for the response body.
+                # Maximum time allowed for receiving the response body.
                 $cts.CancelAfter(60000)
 
                 $stream = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
@@ -526,7 +527,7 @@ try {
     $stage = 'preparing the replacement hosts file'
 
     # Create the temporary file in the hosts directory.
-    # It inherits the directory's permissions and stays on the same volume.
+    # It stays on the same volume as the original hosts file.
     $tmp = Join-Path (
         Split-Path -Parent $HostsPath
     ) ('hosts.viber.' + [guid]::NewGuid().ToString('N'))
@@ -538,18 +539,47 @@ try {
     )
 
     # -----------------------------------------------------------------------
-    # 7. Atomically replace the hosts file.
+    # 7. Atomically replace the hosts file using Windows MoveFileEx.
     # -----------------------------------------------------------------------
 
     $stage = 'atomically replacing the hosts file'
 
-    # Do not fall back to a potentially unsafe ordinary copy.
-    # If atomic replacement fails, the original hosts file remains in place.
-    [System.IO.File]::Replace(
+    if (-not ('ViberAdBlocker.NativeMethods' -as [type])) {
+
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+
+namespace ViberAdBlocker
+{
+    public static class NativeMethods
+    {
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool MoveFileEx(
+            string existingFileName,
+            string newFileName,
+            int flags
+        );
+    }
+}
+'@
+    }
+
+    # MOVEFILE_REPLACE_EXISTING = 0x1
+    # MOVEFILE_WRITE_THROUGH    = 0x8
+    $flags = 0x1 -bor 0x8
+
+    $result = [ViberAdBlocker.NativeMethods]::MoveFileEx(
         $tmp,
         $HostsPath,
-        $null
+        $flags
     )
+
+    if (-not $result) {
+        $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw [ComponentModel.Win32Exception]::new($errorCode)
+    }
 
     $tmp = $null
     $hostsChanged = $true
